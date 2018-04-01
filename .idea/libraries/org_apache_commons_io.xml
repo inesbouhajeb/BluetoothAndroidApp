@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="bluecove-2.1.0">
+  <library name="org.apache.commons.io">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/bluecove-2.1.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/org.apache.commons.io.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
