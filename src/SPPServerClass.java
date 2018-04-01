@@ -1,5 +1,4 @@
 import javafx.scene.image.Image;
-
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
@@ -23,10 +22,8 @@ public class SPPServerClass {
     private boolean scannerRunning=true;
     private Image imageFromBytes;
 
-
-
     public void startServer() {
-        //1. Constructing the connection URL.
+        //1. Constructing the connection URL for StreamConnectionNotifier. Only used to open it.
 
         //Create a UUID for SPP
         UUID uuid=new UUID("1101",true);
@@ -46,39 +43,44 @@ public class SPPServerClass {
             System.out.println("\nServer Started. Waiting for clients to connect…");
             connection=mStreamConnectionNotifier.acceptAndOpen();//The acceptAndOpen method waits until a client is connected.
 
-
             RemoteDevice dev=RemoteDevice.getRemoteDevice(connection);
             System.out.println("Remote device address: "+dev.getBluetoothAddress());
             System.out.println("Remote device name: "+dev.getFriendlyName(true));
 
-            //read string from spp client
-            //TODO change it to read bytes
+            //read data from spp client using InputStream
+
+            int size=240664; //for now, later change it to check amount of bytes received from client //TODO
             InputStream inputStream=connection.openInputStream();
-            BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(inputStream));
-            String lineRead=bufferedReader.readLine();
-            System.out.println(lineRead+" read line");
+            size=inputStream.available();
+            byte[] receivedBytes= new byte[size];
+            inputStream.read(receivedBytes,0,size);
+
+            //for me to see comming bytes
+            for(int i=0;i<receivedBytes.length;i++){
+                System.out.println(receivedBytes[i]);
+            }
+            System.out.println(" Length of received bytes: "+receivedBytes.length);
 
             //saving bytes as file
             String timeStamp=new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
             FileOutputStream fos=new FileOutputStream("ImgBluetoothApp_"+timeStamp+"_.jpeg");
-            byte[] receivedBytes = lineRead.getBytes();
             fos.write(receivedBytes);
-            //fos.close();
+            fos.close();
 
-            //setting image in
-            imageFromBytes = new Image(new ByteArrayInputStream(receivedBytes));
+            //TODO
+            //setting image in GUI
+            //imageFromBytes = new Image(new ByteArrayInputStream(receivedBytes));
 
-            //send response to spp client
-            OutputStream outStream=connection.openOutputStream();
-            PrintWriter pWriter=new PrintWriter(new OutputStreamWriter(outStream));
-            pWriter.write("Response String from SPP Server\r\n");
-            pWriter.flush();
+            //send response to spp client, not needed now
+//            OutputStream outStream=connection.openOutputStream();
+//            PrintWriter pWriter=new PrintWriter(new OutputStreamWriter(outStream));
+//            pWriter.write("Response String from SPP Server\r\n");
+//            pWriter.flush();
 
             scannerRunning=false;
 
-            pWriter.close();
+//            pWriter.close();
             mStreamConnectionNotifier.close();
-
 
         } catch (IOException e) {
             e.printStackTrace();
