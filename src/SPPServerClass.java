@@ -1,12 +1,19 @@
+import com.sun.glass.ui.Pixels;
 import javafx.application.Platform;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
+import javax.imageio.ImageIO;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
+import javax.swing.text.html.HTMLDocument;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
 
 /**
  * Based on code from: http://www.jsr82.com/jsr-82-sample-spp-server-and-client/
@@ -49,27 +56,42 @@ public class SPPServerClass{
                     ServerFX.getTextArea().appendText("Remote device address: "+dev.getBluetoothAddress()+"\n");
                     ServerFX.getTextArea().appendText("Remote device name: "+dev.getFriendlyName(true)+"\n");
 
-                    //TODO
-                    //read data from spp client using InputStream
-                    int size=240664; //for now, later change it to check amount of bytes received from client
-                    InputStream inputStream=connection.openInputStream();
-                    size=inputStream.available();
+                    //TODO/
+                    // read data from spp client using InputStream
+                    int size=65536;//31961088;
                     byte[] receivedBytes= new byte[size];
-                    inputStream.read(receivedBytes,0,size);
-
-                    //for me to see comming bytes
-                    for(int i=0;i<receivedBytes.length;i++){
+                    InputStream connectionInputStream=connection.openInputStream();
+                    System.out.println("Avaible bytes from inputStream: "+connectionInputStream.available());
+                    //handler
+                    connectionInputStream.read(receivedBytes,0,size);
+                    connectionInputStream.close();//zamkykamy inputa, ktorym pobralismy bity
+                    // for me to see comming bytes
+                    for(int i=0;i<receivedBytes.length;i+=1000){
                         System.out.println(receivedBytes[i]);
                     }
 
-                    ServerFX.getTextArea().appendText(" Length of received bytes: "+receivedBytes.length+"\n");
+                    //saving bytes and conversion
+                    InputStream in=new ByteArrayInputStream(receivedBytes);//input streamem sa bity
+                    BufferedImage img= ImageIO.read(in);//it could return NULL
+                    Iterator i=ImageIO.getImageReaders(in);
+                    if(i.hasNext()){
+                        System.out.println("Reader is found");
+                    }
+                    else {
+                        System.out.println("Reader is not found");
+                    }
+                    if(img==null){
+                        System.out.println("Image is NULL");
+                    }
 
-                    //saving bytes as file
+                    File outputFile=new File("saved.jpg");
+                    ImageIO.write(img,"jpg",outputFile);
+                    System.out.println("Image created!");
+                    in.close();
+
+                    //file stamp
                     String timeStamp=new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
                     fileName="ImgBluetoothApp_"+timeStamp+"_.jpeg";
-                    FileOutputStream fos=new FileOutputStream(fileName);
-                    fos.write(receivedBytes);
-                    fos.close();
 
                     mStreamConnectionNotifier.close();
                     ServerFX.getTextArea().appendText("Success! Your image was saved.\n");
@@ -79,6 +101,7 @@ public class SPPServerClass{
                         ServerFX.getStopBtn().setText("Run again");
                     });
                     ServerFX.getStopBtn().setVisible(true);
+                    in.close();
                 }
             }
             catch (InterruptedIOException e){
